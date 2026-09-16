@@ -7,12 +7,14 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable implements FilamentUser
 {
     use Notifiable;
     use HasRoles;
+    // 2. Use the trait inside your model class
+    use HasFactory; 
 
     /**
      * The authentication guard used by Spatie Permission.
@@ -46,6 +48,7 @@ class User extends Authenticatable implements FilamentUser
      * @return array<string, string>
      */
     protected function casts(): array
+    
     {
         return [
             'email_verified_at' => 'datetime',
@@ -57,8 +60,8 @@ class User extends Authenticatable implements FilamentUser
      * Determine if the user can access the Filament panel.
      */
     public function canAccessPanel(Panel $panel): bool
+
     {
-        // Restrict panel access to only users with specific roles, or allow during local dev
         return $this->hasRole(['Super Admin', 'Admin']) || app()->environment('local');
     }
 
