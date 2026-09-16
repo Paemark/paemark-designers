@@ -1,4 +1,3 @@
-
 name: Tests
 
 on:
@@ -54,8 +53,9 @@ jobs:
           php -v
           composer --version
 
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+      # Modified: Runs the targeted update according to recommendations instead of a strict composer install
+      - name: Install and Update Composer dependencies
+        run: composer update laravel/framework symfony/finder --with-all-dependencies --prefer-dist --no-interaction --no-progress --no-scripts
 
       - name: Copy environment file
         run: cp .env.example .env
@@ -79,4 +79,4 @@ jobs:
 
       - name: Execute tests
         run: php artisan test
-        
+
