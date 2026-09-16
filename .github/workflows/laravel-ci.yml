@@ -1,0 +1,57 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      # Sets up a temporary MySQL database for isolation during testing
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP Environment
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3' # or '8.4' based on your local WampServer version
+        extensions: mbstring, dom, curl, libxml, mysql, sqlite3
+        coverage: none
+
+    - name: Copy Environment Configuration File
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Set Testing Environment Variables
+      run: |
+        echo "DB_CONNECTION=mysql" >> $GITHUB_ENV
+        echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
+        echo "DB_PORT=3306" >> $GITHUB_ENV
+        echo "DB_DATABASE=testing" >> $GITHUB_ENV
+        echo "DB_USERNAME=root" >> $GITHUB_ENV
+        echo "DB_PASSWORD=" >> $GITHUB_ENV
+
+    - name: Install Composer Dependencies
+      run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    - name: Generate Application Key
+      run: php artisan key:generate
+
+    - name: Run Database Migrations & Seeders
+      run: php artisan migrate --force
+
+    - name: Execute Automated Test Suite
+      run: php artisan test
