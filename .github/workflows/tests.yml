@@ -1,3 +1,4 @@
+
 name: Tests
 
 on:
@@ -17,6 +18,8 @@ permissions:
 
 jobs:
   tests:
+    name: Laravel Tests
+
     runs-on: ubuntu-latest
 
     services:
@@ -43,22 +46,29 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4.1"
+          php-version: "8.4.15"
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql
           coverage: none
           tools: composer:v2
 
-      - name: Verify PHP version
+      - name: Verify PHP and Composer
         run: |
           php -v
           composer --version
+          composer validate --no-check-publish
 
-      # Modified: Runs the targeted update according to recommendations instead of a strict composer install
-      - name: Install and Update Composer dependencies
-        run: composer update laravel/framework symfony/finder --with-all-dependencies --prefer-dist --no-interaction --no-progress --no-scripts
+      - name: Install Composer dependencies
+        run: |
+          composer install \
+            --prefer-dist \
+            --no-interaction \
+            --no-progress \
+            --no-ansi \
+            --no-scripts
 
       - name: Copy environment file
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
 
       - name: Set testing environment variables
         run: |
@@ -71,12 +81,12 @@ jobs:
           echo "DB_USERNAME=root" >> "$GITHUB_ENV"
           echo "DB_PASSWORD=" >> "$GITHUB_ENV"
 
-      - name: Generate app key
-        run: php artisan key:generate
+      - name: Generate application key
+        run: php artisan key:generate --ansi
 
       - name: Run database migrations
-        run: php artisan migrate --force
+        run: php artisan migrate --force --ansi
 
-      - name: Execute tests
-        run: php artisan test
-
+      - name: Execute automated test suite
+        run: php artisan test --ansi
+        
