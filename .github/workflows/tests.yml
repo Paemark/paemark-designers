@@ -1,6 +1,5 @@
 
-
-name: Laravel CI
+name: Tests
 
 on:
   push:
@@ -18,9 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  laravel-tests:
-    name: Laravel Tests
-
+  tests:
     runs-on: ubuntu-latest
 
     services:
@@ -41,30 +38,29 @@ jobs:
           --health-retries=3
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup PHP Environment
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: mbstring, xml, ctype, iconv, mysql
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql
           coverage: none
           tools: composer:v2
 
-      - name: Display PHP and Composer Versions
+      - name: Verify PHP version
         run: |
-          php --version
+          php -v
           composer --version
 
-      - name: Validate Composer Configuration
-        run: composer validate --no-check-publish
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
 
-      - name: Copy Environment Configuration File
-        run: |
-          php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Copy environment file
+        run: cp .env.example .env
 
-      - name: Set Testing Environment Variables
+      - name: Set testing environment variables
         run: |
           echo "APP_ENV=testing" >> "$GITHUB_ENV"
           echo "APP_DEBUG=true" >> "$GITHUB_ENV"
@@ -75,21 +71,12 @@ jobs:
           echo "DB_USERNAME=root" >> "$GITHUB_ENV"
           echo "DB_PASSWORD=" >> "$GITHUB_ENV"
 
-      - name: Install Composer Dependencies
-        run: |
-          composer install \
-            --no-ansi \
-            --no-interaction \
-            --no-progress \
-            --prefer-dist \
-            --no-scripts
+      - name: Generate app key
+        run: php artisan key:generate
 
-      - name: Generate Application Key
-        run: php artisan key:generate --ansi
+      - name: Run database migrations
+        run: php artisan migrate --force
 
-      - name: Run Database Migrations
-        run: php artisan migrate --force --ansi
-
-      - name: Execute Automated Test Suite
-        run: php artisan test --ansi
+      - name: Execute tests
+        run: php artisan test
         
